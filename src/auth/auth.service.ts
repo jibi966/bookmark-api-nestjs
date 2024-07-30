@@ -11,6 +11,7 @@ export class AuthService {
   async signup(body: AuthTypes) {
     try {
       const hash = await argon2.hash(body.password);
+      // argon2 instead of bcrypt.js
       const user = await this.prisma.user.create({
         data: {
           email: body.email,
