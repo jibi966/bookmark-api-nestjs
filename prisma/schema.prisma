@@ -5,7 +5,8 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // previewFeatures = ["omitApi"] // to omit fields globally
 }
 
 datasource db {
@@ -13,24 +14,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// user can have many bookmarks
 model User {
-  id Int @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  email String
+  email          String @unique
   hashedPassword String
 
   firstName String?
-  lastName String?
+  lastName  String?
+  Bookmark  Bookmark[]
+
+  @@map("users")
 }
 
 model Bookmark {
-  id Int @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  title String
+  title       String
   description String?
-  link String
+  link        String
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  @@map("bookmarks")
 }
