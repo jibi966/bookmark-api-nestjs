@@ -77,7 +77,7 @@ describe("App e2e", () => {
     });
 
     describe("edit user", () => {
-      it("should get current user", () => {
+      it("should edit current user", () => {
         const body: EditUser = {
           email: "jibin@codewithme.com",
           firstName: "Jibin",
@@ -85,7 +85,7 @@ describe("App e2e", () => {
         return pactum
           .spec()
           .patch("/users")
-          .withBearerToken("$S{token}")
+          .withBearerToken("$S{token}") // $S{token} can access in pactum
           .withBody(body)
           .expectStatus(200)
           .expectBodyContains(body.email)
