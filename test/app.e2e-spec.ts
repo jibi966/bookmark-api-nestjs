@@ -4,6 +4,7 @@ import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { PrismaService } from "../src/prisma/prisma.service";
 import * as pactum from "pactum";
 import { EditUser } from "../src/user/types";
+import { CreateBookmark, EditBookmark } from "../src/bookmark/types";
 
 describe("App e2e", () => {
   let app: INestApplication;
@@ -79,7 +80,7 @@ describe("App e2e", () => {
     describe("edit user", () => {
       it("should edit current user", () => {
         const body: EditUser = {
-          email: "jibin@codewithme.com",
+          lastName: "LastName",
           firstName: "Jibin",
         };
         return pactum
@@ -88,21 +89,85 @@ describe("App e2e", () => {
           .withBearerToken("$S{token}") // $S{token} can access in pactum
           .withBody(body)
           .expectStatus(200)
-          .expectBodyContains(body.email)
+          .expectBodyContains(body.lastName)
           .expectBodyContains(body.firstName);
       });
     });
   });
 
   describe("Bookmark", () => {
-    describe("create bookmark", () => {});
+    describe("get empty bookmark", () => {
+      it("should return empty bookmark", () => {
+        return pactum.spec().get("/bookmarks").withBearerToken("$S{token}").expectStatus(200).expectBody([]);
+      });
+    });
 
-    describe("get bookmarks", () => {});
+    describe("create bookmark", () => {
+      const body: CreateBookmark = {
+        title: "Bookmark 1",
+        description: "Bookmark description 1",
+        link: "http://github.com",
+      };
+      it("should create bookmark", () => {
+        return pactum
+          .spec()
+          .post("/bookmarks")
+          .withBearerToken("$S{token}")
+          .withBody(body)
+          .expectStatus(201)
+          .stores("bookmarkId", "id");
+      });
+    });
 
-    describe("get bookmark by id", () => {});
+    describe("get bookmarks", () => {
+      it("should return bookmarks", () => {
+        return pactum.spec().get("/bookmarks").withBearerToken("$S{token}").expectStatus(200).expectJsonLength(1);
+      });
+    });
 
-    describe("edit bookmark by id", () => {});
+    describe("get bookmark by id", () => {
+      it("should return bookmarks by id", () => {
+        return pactum
+          .spec()
+          .get("/bookmarks/{id}")
+          .withPathParams("id", "$S{bookmarkId}")
+          .withBearerToken("$S{token}")
+          .expectStatus(200)
+          .expectBodyContains("$S{bookmarkId}");
+      });
+    });
 
-    describe("delete bookmark by id", () => {});
+    describe("edit bookmark by id", () => {
+      const dto: EditBookmark = {
+        title: "Bookmark Edit title",
+        description: "new Description",
+      };
+      it("should edit bookmarks by id", () => {
+        return pactum
+          .spec()
+          .patch("/bookmarks/{id}")
+          .withPathParams("id", "$S{bookmarkId}")
+          .withBearerToken("$S{token}")
+          .withBody(dto)
+          .expectStatus(200)
+          .expectBodyContains(dto.title)
+          .expectBodyContains(dto.description);
+      });
+    });
+
+    describe("delete bookmark by id", () => {
+      it("should delete bookmarks by id", () => {
+        return pactum
+          .spec()
+          .delete("/bookmarks/{id}")
+          .withPathParams("id", "$S{bookmarkId}")
+          .withBearerToken("$S{token}")
+          .expectStatus(204);
+      });
+
+      it("should return empty bookmark", () => {
+        return pactum.spec().get("/bookmarks").withBearerToken("$S{token}").expectStatus(200).expectBody([]);
+      });
+    });
   });
 });

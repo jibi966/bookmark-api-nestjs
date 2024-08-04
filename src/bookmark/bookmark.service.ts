@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateBookmark, EditBookmark } from "./types";
 
@@ -6,13 +6,48 @@ import { CreateBookmark, EditBookmark } from "./types";
 export class BookmarkService {
   constructor(private prisma: PrismaService) {}
 
-  async createBookmark(userId: number, dto: CreateBookmark) {}
+  async createBookmark(userId: number, dto: CreateBookmark) {
+    const bookmark = await this.prisma.bookmark.create({
+      data: {
+        userId,
+        ...dto,
+      },
+    });
+    return bookmark;
+  }
 
-  async getBookmarks(userId: number) {}
+  getBookmarks(userId: number) {
+    return this.prisma.bookmark.findMany({ where: { userId } });
+  }
 
-  async getBookmarksById(userId: number, bookmarkId: number) {}
+  getBookmarksById(userId: number, bookmarkId: number) {
+    return this.prisma.bookmark.findFirst({ where: { id: bookmarkId, userId } });
+  }
 
-  async editBookmarkById(userId: number, bookmarkId: number, dto: EditBookmark) {}
+  async editBookmarkById(userId: number, bookmarkId: number, dto: EditBookmark) {
+    // find the bookmark
+    const bookmark = await this.prisma.bookmark.findUnique({ where: { id: bookmarkId } });
+    // check if the bookmark owns by the user
+    if (!bookmark || bookmark.userId !== userId) {
+      throw new ForbiddenException("Access denied");
+    }
 
-  async deleteBookmarkById(userId: number, bookmarkId: number) {}
+    return this.prisma.bookmark.update({
+      where: { id: bookmarkId },
+      data: {
+        ...dto,
+      },
+    });
+  }
+
+  async deleteBookmarkById(userId: number, bookmarkId: number) {
+    // find the bookmark
+    const bookmark = await this.prisma.bookmark.findUnique({ where: { id: bookmarkId } });
+
+    // check if the bookmark owns by the user
+    if (!bookmark || bookmark.userId !== userId) {
+      throw new ForbiddenException("Access denied");
+    }
+    await this.prisma.bookmark.delete({ where: { id: bookmarkId } });
+  }
 }
